@@ -37,4 +37,25 @@ router.route('/:id')
     .put(protect, validateTodo, validateRequest, updateTodo)
     .delete(protect, deleteTodo);
 
+const { updateTodoStatus, updateTodoPriority } = require('../controllers/todoController');
+
+router.route('/:id/status')
+    .patch(protect, updateTodoStatus);
+
+router.route('/:id/priority')
+    .patch(protect, updateTodoPriority);
+
+const { addAttachment } = require('../controllers/todoController');
+const upload = require('../middleware/upload');
+
+router.route('/:id/attachments')
+    .post(protect, (req, res, next) => {
+        upload(req, res, (err) => {
+            if (err) {
+                return res.status(400).json({ success: false, message: err });
+            }
+            next();
+        });
+    }, addAttachment);
+
 module.exports = router;
