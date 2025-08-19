@@ -49,6 +49,9 @@ exports.addMember = async (req, res, next) => {
         project.members.push(userId);
         await project.save();
 
+        // Emit event to the project room
+        req.io.to(req.params.id).emit('project:updated', project);
+
         res.status(200).json({ success: true, data: project.members });
 
     } catch (error) {
@@ -83,6 +86,9 @@ exports.removeMember = async (req, res, next) => {
         );
 
         await project.save();
+
+        // Emit event to the project room
+        req.io.to(req.params.id).emit('project:updated', project);
 
         res.status(200).json({ success: true, data: project.members });
 

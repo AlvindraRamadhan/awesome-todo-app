@@ -64,6 +64,11 @@ exports.updateTodoStatus = async (req, res, next) => {
         todo.status = status;
         await todo.save();
 
+        // Emit event
+        if (todo.project) {
+            req.io.to(todo.project.toString()).emit('todo:updated', todo);
+        }
+
         res.status(200).json({ success: true, data: todo, timestamp: new Date().toISOString() });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -133,6 +138,11 @@ exports.updateTodoPriority = async (req, res, next) => {
         todo.priority = priority;
         await todo.save();
 
+        // Emit event
+        if (todo.project) {
+            req.io.to(todo.project.toString()).emit('todo:updated', todo);
+        }
+
         res.status(200).json({ success: true, data: todo, timestamp: new Date().toISOString() });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -168,6 +178,12 @@ exports.createTodo = async (req, res, next) => {
     try {
         req.body.createdBy = req.user.id;
         const todo = await Todo.create(req.body);
+
+        // Emit event
+        if (todo.project) {
+            req.io.to(todo.project.toString()).emit('todo:created', todo);
+        }
+
         res.status(201).json({
             success: true,
             data: todo,
@@ -199,6 +215,11 @@ exports.updateTodo = async (req, res, next) => {
             runValidators: true
         });
 
+        // Emit event
+        if (todo.project) {
+            req.io.to(todo.project.toString()).emit('todo:updated', todo);
+        }
+
         res.status(200).json({ success: true, data: todo, timestamp: new Date().toISOString() });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -221,7 +242,13 @@ exports.deleteTodo = async (req, res, next) => {
             return res.status(401).json({ success: false, message: 'Not authorized to delete this todo' });
         }
 
+        const projectId = todo.project.toString();
+        const todoId = todo._id;
+
         await todo.deleteOne();
+
+        // Emit event
+        req.io.to(projectId).emit('todo:deleted', { id: todoId, project: projectId });
 
         res.status(200).json({ success: true, data: {}, timestamp: new Date().toISOString() });
     } catch (error) {
